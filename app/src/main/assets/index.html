@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" content="width=device-width, initial-scale=1" name="viewport"/>
+    <title>%s</title>
+    <link rel="shortcut icon" href="/getAssets?res=favicon.ico">
+    <link rel="stylesheet" type="text/css" href="/getAssets?res=style.css"/>
+    <link rel="stylesheet" type="text/css" href="/getAssets?res=icons.css"/>
+    <link rel="stylesheet" type="text/css" href="/getAssets?res=material.css"/>
+    <script type="text/javascript" src="/getAssets?res=jquery-3.5.1.min.js"></script>
+    <script type="text/javascript" src="/getAssets?res=material-components-web.min.js"></script>
+    <script type="text/javascript" src="/getAssets?res=clipboard.min.js"></script>
+    <script type="text/javascript" src="/getAssets?res=app.js"></script>
+</head>
+<body>
+<header class="mdc-top-app-bar">
+    <div class="mdc-top-app-bar__row">
+        <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+            <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button" aria-label="Open navigation menu" onclick="goBack()">arrow_back</button>
+            <span class="mdc-top-app-bar__title"></span>
+        </section>
+        <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end">
+            <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button" aria-label="Options">more_vert</button>
+        </section>
+    </div>
+</header>
+<main class="mdc-top-app-bar--fixed-adjust">
+    <div id="dir-panel" class="iZmuQc">
+
+    </div>
+    <div id="file-panel" class="iZmuQc">
+
+    </div>
+    <div class="mdc-snackbar" id="snackbar">
+        <div class="mdc-snackbar__surface">
+            <div aria-live="polite" class="mdc-snackbar__label" role="status"></div>
+        </div>
+    </div>
+    <div class="mdc-dialog">
+        <div class="mdc-dialog__container">
+            <div aria-describedby="my-dialog-content" aria-labelledby="my-dialog-title" aria-modal="true" class="mdc-dialog__surface" role="alertdialog">
+                <!-- Title cannot contain leading whitespace due to mdc-typography-baseline-top() -->
+                <h2 class="mdc-dialog__title" id="my-dialog-title">
+                    信息
+                </h2>
+                <div class="mdc-dialog__content">
+                    <!--文件类型图标-->
+                    <div class="gudAKb">
+                        <div class="V1mwke">
+                            <div class="l-u-Ab-zb-x l-ta-wa">
+                                <div class="l-u-Ab-zb l-u-Ab-ul">
+                                    <div class="l-u-Ab-zb-Pn-ve"></div>
+                                    <div class="l-u-Ab-zb-Lu"></div>
+                                    <img class="l-u-Ab-zb-c" src="/getAssets?res=download.png"></div>
+                            </div>
+                        </div>
+                    </div>
+<!--                    文件名-->
+                    <ul class="mdc-list">
+                        <li class="mdc-list-item">
+                            <span class="file-dialog-name__text" style="font-weight: bold"></span>
+                        </li>
+                    </ul>
+<!--                    信息-->
+                    <ul class="mdc-list mdc-list-detail-panel mdc-list--avatar-list">
+
+                    </ul>
+                </div>
+                <div class="mdc-dialog__actions">
+<!--                    按钮-->
+                </div>
+            </div>
+        </div>
+        <div class="mdc-dialog__scrim">
+        </div>
+    </div>
+    <script type="text/javascript">
+        const dialog = new mdc.dialog.MDCDialog(document.querySelector('.mdc-dialog'))
+        const buttons = document.querySelectorAll('.mdc-button')
+        for (const button of buttons) {
+            mdc.ripple.MDCRipple.attachTo(button)
+        }
+        const topAppBar = new mdc.topAppBar.MDCTopAppBar(document.querySelector('.mdc-top-app-bar'))
+        dialog.listen('MDCDialog:opened', function() {
+            // Assuming contentElement references a common parent element with the rest of the page's content
+            contentElement.setAttribute('aria-hidden', 'true')
+        });
+        dialog.listen('MDCDialog:closing', function() {
+            contentElement.removeAttribute('aria-hidden')
+        });
+</script>
+</main>
+</body>
