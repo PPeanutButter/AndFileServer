@@ -191,6 +191,6 @@ c-wiz {
 .hide {
     display: none;
 }
-.mdc-top-app-bar--fixed-adjust::-webkit-scrollbar{
+body::-webkit-scrollbar{
     display:none
 }

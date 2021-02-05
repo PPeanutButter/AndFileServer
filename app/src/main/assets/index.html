@@ -12,6 +12,11 @@
     <script type="text/javascript" src="/getAssets?res=clipboard.min.js"></script>
     <script type="text/javascript" src="/getAssets?res=html.js"></script>
     <script type="text/javascript" src="/getAssets?res=app.js"></script>
+    <script type="text/javascript">
+        $.get("/getDeviceName",function(data){
+            document.title = data;
+        });
+    </script>
 </head>
 <body>
 <header class="mdc-top-app-bar">

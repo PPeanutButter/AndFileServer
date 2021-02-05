@@ -1,5 +1,7 @@
 package com.peanut.gd.http
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -7,13 +9,14 @@ import android.os.Build
 import android.os.Environment
 import android.os.IBinder
 import android.webkit.MimeTypeMap
+import androidx.core.app.NotificationCompat
 import fi.iki.elonen.NanoHTTPD
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream
-import java.io.InputStreamReader
+import java.net.NetworkInterface
+import java.net.SocketException
 import java.net.URLEncoder
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
@@ -27,6 +30,19 @@ class HttpService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         HttpServer(8081, this)
+        val notificationManager = this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            notificationManager.createNotificationChannel(
+                NotificationChannel("service","本机ip:port", NotificationManager.IMPORTANCE_DEFAULT)
+            )
+        val customNotification = NotificationCompat.Builder(this,"service")
+            .setSmallIcon(R.drawable.ic_baseline_android_24)
+            .setOngoing(true)
+            .setContentTitle("http://"+getLocalIpAddress()+":8081")
+            .setContentText("请在局域网内设备的浏览器中输入")
+            .setShowWhen(true)
+            .build()
+        notificationManager.notify((Math.random() * 10000).toInt(), customNotification)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -40,6 +56,7 @@ class HttpService : Service() {
          * 不管是什么路径的链接都发送模板html，读取路径然后通过api来加载文件夹与文件
          *
          * api：
+         *      http://localhost:8081/getDeviceName --获取文件Device Name
          *      http://localhost:8081/getFileList?path=/ --获取文件list[{name,type}]
          *      http://localhost:8081/getAssets?res=style.css --获取html模板资源
          *      http://localhost:8081/getFileDetail?path=style.css --获取文件信息[{mime_type,size,last_edit_time}]
@@ -49,6 +66,7 @@ class HttpService : Service() {
         override fun serve(session: IHTTPSession): Response {
             return try {
                 return when (session.uri) {
+                    "/getDeviceName" -> getDeviceName()
                     "/getFileList" -> getFileList(session.parameters)
                     "/getFileDetail" -> getFileDetail(session.parameters)
                     "/getFile" -> getFile(session.parameters, session.headers)
@@ -58,7 +76,7 @@ class HttpService : Service() {
                             MIME_PLAINTEXT, "404"
                         )
                     }
-                    else -> "index.html".sendAssets(Build.BRAND + " " + Build.MODEL)
+                    else -> "index.html".sendAssets()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -70,20 +88,10 @@ class HttpService : Service() {
             val ins = context.resources.assets.open(this)
             return newFixedLengthResponse(
                 Response.Status.OK,
-                MIME_TYPES[this.substring(this.lastIndexOf(".") + 1)],
+                mimeTypes()[this.substring(this.lastIndexOf(".") + 1)],
                 ins, ins.available().toLong()
             )
         }
-
-        private fun String.sendAssets(args: String): Response =
-            newFixedLengthResponse(
-                Response.Status.OK,
-                mimeTypes()[this.substring(this.lastIndexOf(".") + 1)],
-                String.format(
-                    BufferedReader(InputStreamReader(context.resources.assets.open(this))).readText(),
-                    args
-                )
-            )
 
         private fun getFile(
             parameters: MutableMap<String, MutableList<String>>,
@@ -194,6 +202,8 @@ class HttpService : Service() {
             )
         }
 
+        private fun getDeviceName() = newFixedLengthResponse(Build.BRAND + " " + Build.MODEL)
+
         private fun getFileDetail(parameters: MutableMap<String, MutableList<String>>): Response {
             parameters["path"]?.get(0)?.let { path ->
                 val fileDetails = JSONArray()
@@ -234,6 +244,26 @@ class HttpService : Service() {
                 it.put("value", value)
             })
         }
+    }
 
+    fun getLocalIpAddress(): String {
+        try {
+            val en = NetworkInterface.getNetworkInterfaces()
+            while (en.hasMoreElements()) {
+                val intf: NetworkInterface = en.nextElement()
+                val enumIpAddr = intf.inetAddresses
+                while (enumIpAddr.hasMoreElements()) {
+                    val inetAddress = enumIpAddr.nextElement()
+                    if (!inetAddress.isLoopbackAddress
+                        && !inetAddress.isLinkLocalAddress
+                    ) {
+                        return inetAddress.hostAddress.toString()
+                    }
+                }
+            }
+        } catch (ex: SocketException) {
+
+        }
+        return "localhost"
     }
 }
