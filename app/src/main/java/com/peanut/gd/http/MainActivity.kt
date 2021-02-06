@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.LinearLayout
 import android.widget.TextView
-import java.io.File
 import java.lang.Exception
 
 class MainActivity : PeanutActivity() {
@@ -19,21 +18,15 @@ class MainActivity : PeanutActivity() {
         }
         val panel = findViewById<LinearLayout>(R.id.log)
         panel.removeAllViews()
-        var reader = emptyList<String>()
         thread {
             while (true) {
                 try {
-                    val newLines = File(this.cacheDir.path + "/log.txt").readLines()
-                    for (i in reader.size until newLines.size) {
-                        runOnUiThread {
-                            panel.addView(TextView(this).also { it.text = newLines[i] })
-                        }
-                        reader = newLines
-                    }
+                    for (log in SettingManager.getLogs())
+                        runOnUiThread { log?.let { a-> panel.addView(TextView(this).also { it.text = a }) } }
                 } catch (e: Exception) {
 
                 }
-                Thread.sleep(100)
+                Thread.sleep(200)
             }
         }
     }

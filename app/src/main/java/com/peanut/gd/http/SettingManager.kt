@@ -15,6 +15,20 @@ object SettingManager {
             )
     }
 
+    private var readSize = 0
+    private var logs = emptyArray<String>()
+    fun addLogs(log:String){
+        logs = logs.plus(log)
+    }
+
+    fun getLogs():Array<String?>{
+        val newLogs = arrayOfNulls<String>(logs.size- readSize)
+        for (i in newLogs.indices)
+            newLogs[i] = logs[readSize+i]
+        readSize += newLogs.size
+        return newLogs
+    }
+
     /**
      * 封装一些方法
      */

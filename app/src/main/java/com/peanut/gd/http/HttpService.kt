@@ -52,10 +52,12 @@ class HttpService : Service() {
     }
 
     inner class HttpServer(HttpPort: Int, private val context: Context) : NanoHTTPD(HttpPort) {
-        private val log = File(context.cacheDir.path+"/log.txt").also { it.writeText("Starting Service..."+System.lineSeparator()) }
         init {
             start(SOCKET_READ_TIMEOUT, false)
-            println("Running! Point your browsers to http://${super.getHostname()}:8081/ \n")
+            SettingManager.addLogs("Running! Point your browsers to "+"http://" + getAllLocalIpAddress().joinToString(
+                prefix = "{",
+                postfix = "}"
+            ) + ":8081")
         }
 
         /**
@@ -72,7 +74,7 @@ class HttpService : Service() {
          */
         override fun serve(session: IHTTPSession): Response {
             return try {
-                log.appendText(session.uri+"?"+session.queryParameterString+System.lineSeparator())
+                SettingManager.addLogs(session.uri + "?" + session.queryParameterString)
                 return when (session.uri) {
                     "/getDeviceName" -> getDeviceName()
                     "/getFileList" -> getFileList(session.parameters)
@@ -182,9 +184,12 @@ class HttpService : Service() {
         private fun getFileList(parameters: MutableMap<String, MutableList<String>>): Response {
             parameters["path"]?.get(0)?.let { path ->
                 val fileList = JSONArray()
-                File(rootPath + path).listFiles()?.let { files ->
-                    for (file in files){
-                        if (SettingManager[SettingManager.SHOW_HIDDEN_FILES] != "true" && file.name.startsWith("."))
+                File(rootPath + path).listOrderedFiles()?.let { files ->
+                    for (file in files) {
+                        if (SettingManager[SettingManager.SHOW_HIDDEN_FILES] != "true" && file.name.startsWith(
+                                "."
+                            )
+                        )
                             continue
                         fileList.put(JSONObject().also { jsonObject: JSONObject ->
                             jsonObject.put("name", file.name)
@@ -200,7 +205,8 @@ class HttpService : Service() {
                                 )
                             )
                             jsonObject.put("type", if (file.isDirectory) "Directory" else "File")
-                        })}
+                        })
+                    }
                     return newFixedLengthResponse(
                         Response.Status.OK,
                         "application/json",
@@ -273,6 +279,17 @@ class HttpService : Service() {
                 it.put("key", key)
                 it.put("value", value)
             })
+        }
+
+        private fun File.listOrderedFiles(): List<File>? {
+            val ss: Array<String> = list() ?: return null
+            val sortedSS = ss.toList().sorted()
+            val n = sortedSS.size
+            var fs = emptyList<File>()
+            for (i in 0 until n) {
+                fs = fs.plus(File(this, sortedSS[i]))
+            }
+            return fs
         }
     }
 
