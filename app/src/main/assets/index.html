@@ -26,7 +26,13 @@
             <span class="mdc-top-app-bar__title"></span>
         </section>
         <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end">
-            <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button" aria-label="Options">more_vert</button>
+            <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button" aria-label="Options" onclick="triggerMenu()">more_vert</button>
+            <div class="mdc-menu-surface--anchor" style="top: -20px;">
+                <div class="mdc-menu mdc-menu-surface">
+                    <ul class="mdc-list menu-list-panel" role="menu" aria-hidden="true" aria-orientation="vertical" tabindex="-1">
+                    </ul>
+                </div>
+            </div>
         </section>
     </div>
 </header>
@@ -73,19 +79,23 @@
         </div>
     </div>
     <script type="text/javascript">
-        const dialog = new mdc.dialog.MDCDialog(document.querySelector('.mdc-dialog'))
-        const buttons = document.querySelectorAll('.mdc-button')
+        const dialog = new mdc.dialog.MDCDialog(document.querySelector('.mdc-dialog'));
+        const buttons = document.querySelectorAll('.mdc-button');
         for (const button of buttons) {
-            mdc.ripple.MDCRipple.attachTo(button)
+            mdc.ripple.MDCRipple.attachTo(button);
         }
-        const topAppBar = new mdc.topAppBar.MDCTopAppBar(document.querySelector('.mdc-top-app-bar'))
+        const topAppBar = new mdc.topAppBar.MDCTopAppBar(document.querySelector('.mdc-top-app-bar'));
         dialog.listen('MDCDialog:opened', function() {
             // Assuming contentElement references a common parent element with the rest of the page's content
-            contentElement.setAttribute('aria-hidden', 'true')
+            contentElement.setAttribute('aria-hidden', 'true');
         });
         dialog.listen('MDCDialog:closing', function() {
-            contentElement.removeAttribute('aria-hidden')
+            contentElement.removeAttribute('aria-hidden');
         });
+        const menu = new mdc.menu.MDCMenu(document.querySelector('.mdc-menu'));
+        function triggerMenu() {
+            menu.open = true;
+        }
 </script>
 </main>
 </body>

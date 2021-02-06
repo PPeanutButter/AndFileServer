@@ -20,9 +20,20 @@
         <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end" role="toolbar">
 <!--            <button style="display: none;" class="material-icons mdc-top-app-bar__action-item mdc-icon-button" aria-label="copy-link">link</button>-->
 <!--            <button style="display: none;" class="material-icons mdc-top-app-bar__action-item mdc-icon-button" aria-label="download-link">download</button>-->
-            <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button" aria-label="Options">more_vert</button>
+            <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button" aria-label="Options" onclick="triggerMenu()">more_vert</button>
+            <div class="mdc-menu-surface--anchor" style="top: -20px;">
+                <div class="mdc-menu mdc-menu-surface">
+                    <ul class="mdc-list" role="menu" aria-hidden="true" aria-orientation="vertical" tabindex="-1">
+                        <li class="mdc-list-item" role="menuitem">
+                            <span class="mdc-list-item__ripple"></span>
+                            <span class="mdc-list-item__text">显示隐藏文件</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </section>
     </div>
+
 </header>
 <main class="mdc-top-app-bar--fixed-adjust">
     <div id="dir-panel" class="iZmuQc">
@@ -61,7 +72,6 @@
                         </li>
                     </ul>
                     <ul class="mdc-list mdc-list-detail-panel mdc-list--avatar-list">
-
                     </ul>
                 </div>
                 <div class="mdc-dialog__actions">
@@ -83,6 +93,7 @@
 <script type="text/javascript">
     getFileList("/")
     const dialog = new mdc.dialog.MDCDialog(document.querySelector('.mdc-dialog'));
+    const menu = new mdc.menu.MDCMenu(document.querySelector('.mdc-menu'));
     const buttons = document.querySelectorAll('.mdc-button');
     for (const button of buttons) {
         mdc.ripple.MDCRipple.attachTo(button);
@@ -95,5 +106,8 @@
     dialog.listen('MDCDialog:closing', function() {
         contentElement.removeAttribute('aria-hidden');
     });
+    function triggerMenu() {
+        menu.open = true;
+    }
 </script>
 </body>

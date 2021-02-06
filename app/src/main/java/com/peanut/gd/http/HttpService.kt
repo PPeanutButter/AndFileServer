@@ -33,13 +33,18 @@ class HttpService : Service() {
         val notificationManager = this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             notificationManager.createNotificationChannel(
-                NotificationChannel("service","本机ip:port", NotificationManager.IMPORTANCE_DEFAULT)
+                NotificationChannel("service", "本机ip:port", NotificationManager.IMPORTANCE_DEFAULT)
             )
-        val customNotification = NotificationCompat.Builder(this,"service")
+        val customNotification = NotificationCompat.Builder(this, "service")
             .setSmallIcon(R.drawable.ic_baseline_android_24)
             .setOngoing(true)
-            .setContentTitle("http://"+getLocalIpAddress()+":8081")
-            .setContentText("请在局域网内设备的浏览器中输入")
+            .setContentTitle(
+                "http://" + getAllLocalIpAddress().joinToString(
+                    prefix = "{",
+                    postfix = "}"
+                ) + ":8081"
+            )
+            .setContentText("请在局域网内设备的浏览器中输入,{}中任选一个")
             .setShowWhen(true)
             .build()
         notificationManager.notify((Math.random() * 10000).toInt(), customNotification)
@@ -47,9 +52,10 @@ class HttpService : Service() {
     }
 
     inner class HttpServer(HttpPort: Int, private val context: Context) : NanoHTTPD(HttpPort) {
+        private val log = File(context.cacheDir.path+"/log.txt").also { it.writeText("Starting Service..."+System.lineSeparator()) }
         init {
             start(SOCKET_READ_TIMEOUT, false)
-            println("\nRunning! Point your browsers to http://${super.getHostname()}:8081/ \n")
+            println("Running! Point your browsers to http://${super.getHostname()}:8081/ \n")
         }
 
         /**
@@ -61,15 +67,18 @@ class HttpService : Service() {
          *      http://localhost:8081/getAssets?res=style.css --获取html模板资源
          *      http://localhost:8081/getFileDetail?path=style.css --获取文件信息[{mime_type,size,last_edit_time}]
          *      http://localhost:8081/getFile?path= --下载文件
+         *      http://localhost:8081/settings?key=&value= --下载文件
          *      http://localhost:8081/else --获取index.html
          */
         override fun serve(session: IHTTPSession): Response {
             return try {
+                log.appendText(session.uri+"?"+session.queryParameterString+System.lineSeparator())
                 return when (session.uri) {
                     "/getDeviceName" -> getDeviceName()
                     "/getFileList" -> getFileList(session.parameters)
                     "/getFileDetail" -> getFileDetail(session.parameters)
                     "/getFile" -> getFile(session.parameters, session.headers)
+                    "/settings" -> settings(session.parameters)
                     "/getAssets" -> {
                         session.parameters["res"]?.get(0)?.sendAssets() ?: newFixedLengthResponse(
                             Response.Status.NOT_FOUND,
@@ -88,7 +97,8 @@ class HttpService : Service() {
             val ins = context.resources.assets.open(this)
             return newFixedLengthResponse(
                 Response.Status.OK,
-                mimeTypes()[this.substring(this.lastIndexOf(".") + 1)],
+                MimeTypeMap.getSingleton()
+                    .getMimeTypeFromExtension(this.substring(this.lastIndexOf(".") + 1)),
                 ins, ins.available().toLong()
             )
         }
@@ -173,20 +183,24 @@ class HttpService : Service() {
             parameters["path"]?.get(0)?.let { path ->
                 val fileList = JSONArray()
                 File(rootPath + path).listFiles()?.let { files ->
-                    for (file in files)
+                    for (file in files){
+                        if (SettingManager[SettingManager.SHOW_HIDDEN_FILES] != "true" && file.name.startsWith("."))
+                            continue
                         fileList.put(JSONObject().also { jsonObject: JSONObject ->
                             jsonObject.put("name", file.name)
                             jsonObject.put(
-                                "mime_type", MimeTypeMap.getSingleton().getMimeTypeFromExtension(
-                                    file.name.substring(
-                                        file.name.lastIndexOf(
-                                            "."
-                                        ) + 1
-                                    )
-                                ) ?: "application/octet-stream"
+                                "mime_type", getKnownMime(
+                                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                                        file.name.substring(
+                                            file.name.lastIndexOf(
+                                                "."
+                                            ) + 1
+                                        )
+                                    ) ?: "application/octet-stream"
+                                )
                             )
                             jsonObject.put("type", if (file.isDirectory) "Directory" else "File")
-                        })
+                        })}
                     return newFixedLengthResponse(
                         Response.Status.OK,
                         "application/json",
@@ -199,6 +213,22 @@ class HttpService : Service() {
                 Response.Status.FORBIDDEN,
                 "application/json",
                 "{\"msg\":\"参数错误\""
+            )
+        }
+
+        private fun settings(parameters: MutableMap<String, MutableList<String>>): Response {
+            val key = parameters["key"]?.get(0)
+            val value = parameters["value"]?.get(0)
+            if (key != null && value != null) SettingManager[key] = value
+            return newFixedLengthResponse(
+                Response.Status.OK,
+                "application/json",
+                JSONObject().also {
+                    it.put(
+                        SettingManager.SHOW_HIDDEN_FILES,
+                        SettingManager[SettingManager.SHOW_HIDDEN_FILES]
+                    )
+                }.toString()
             )
         }
 
@@ -246,7 +276,8 @@ class HttpService : Service() {
         }
     }
 
-    fun getLocalIpAddress(): String {
+    private fun getAllLocalIpAddress(): Array<String> {
+        var list = emptyArray<String>()
         try {
             val en = NetworkInterface.getNetworkInterfaces()
             while (en.hasMoreElements()) {
@@ -254,16 +285,27 @@ class HttpService : Service() {
                 val enumIpAddr = intf.inetAddresses
                 while (enumIpAddr.hasMoreElements()) {
                     val inetAddress = enumIpAddr.nextElement()
-                    if (!inetAddress.isLoopbackAddress
-                        && !inetAddress.isLinkLocalAddress
-                    ) {
-                        return inetAddress.hostAddress.toString()
+                    if (!inetAddress.isLoopbackAddress && !inetAddress.isLinkLocalAddress) {
+                        list = list.plus(inetAddress.hostAddress.toString())
                     }
                 }
             }
         } catch (ex: SocketException) {
 
         }
-        return "localhost"
+        return list
+    }
+
+    private fun getKnownMime(mimeType: String): String {
+        val firstList = resources.assets.list("mime-type-icon") ?: return "application/octet-stream"
+        mimeType.split("/").let {
+            if (firstList.indexOf(it[0]) == -1)
+                return "application/octet-stream"
+            val secondaryList =
+                resources.assets.list("mime-type-icon/${it[0]}") ?: return "${it[0]}/all"
+            if (secondaryList.indexOf(it[1]) == -1)
+                return "${it[0]}/all"
+            return mimeType
+        }
     }
 }

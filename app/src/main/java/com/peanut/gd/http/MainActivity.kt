@@ -4,13 +4,37 @@ import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
+import android.widget.LinearLayout
+import android.widget.TextView
+import java.io.File
+import java.lang.Exception
 
 class MainActivity : PeanutActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SettingManager.init(this)
         setContentView(R.layout.activity_main)
         requestPermissionSuccess(Manifest.permission.WRITE_EXTERNAL_STORAGE){
             startService(Intent(this, HttpService::class.java))
+        }
+        val panel = findViewById<LinearLayout>(R.id.log)
+        panel.removeAllViews()
+        var reader = emptyList<String>()
+        thread {
+            while (true) {
+                try {
+                    val newLines = File(this.cacheDir.path + "/log.txt").readLines()
+                    for (i in reader.size until newLines.size) {
+                        runOnUiThread {
+                            panel.addView(TextView(this).also { it.text = newLines[i] })
+                        }
+                        reader = newLines
+                    }
+                } catch (e: Exception) {
+
+                }
+                Thread.sleep(100)
+            }
         }
     }
 

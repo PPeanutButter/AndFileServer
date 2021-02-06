@@ -30,21 +30,41 @@ function getFileList(){
                 $('div#dir-panel').append(String.format(directory_html_data,list.name))
             else $('div#file-panel').append(String.format(file_html_data,list.name,list.mime_type));
         }
+        getSettings()
+    });
+}
+
+function getSettings(key,value){
+    $.get("/settings?key="+key+"&value="+value,function(data){
+        if(value != null && value != '')
+            getFileList();
+        else{
+            const settings = eval(data)
+            $(".menu-list-panel").empty()
+            if (settings.SHOW_HIDDEN_FILES == 'true')
+                $(".menu-list-panel").append(String.format(menu_list_html,"不显示隐藏文件","false"));
+            else $(".menu-list-panel").append(String.format(menu_list_html,"显示隐藏文件","true"));
+        }
     });
 }
 
 function getFileDetail(fileName,mime_type){
-    $.get("/getFileDetail?path="+root+fileName+"&mime_type="+mime_type,function(data){
+    $.get("/getFileDetail?path="+root+fileName,function(data){
         //文件名
         $('.file-dialog-name__text').text(fileName);
         $('ul.mdc-list-detail-panel').empty();
         $('div.mdc-dialog__actions').empty();
         $('div.file-icon').html(String.format(file_detail_icon_html,mime_type));
+        //判断是否是视频文件
+        let isVideo;
+        if (mime_type.toLowerCase().startsWith("video/"))
+            isVideo = ""
+        else isVideo = "disabled"
         //详情
         for (const list of eval(data)) {
             $('ul.mdc-list-detail-panel').append(String.format(file_detail_html,list.key,list.value))
         }
-        $('div.mdc-dialog__actions').append(String.format(dialog_actions_html,window.location.host+"/getFile?path="+root+fileName))
+        $('div.mdc-dialog__actions').append(String.format(dialog_actions_html,window.location.host+"/getFile?path="+root+fileName,isVideo))
         showDialog();
     });
 }
@@ -66,9 +86,10 @@ function onDialogButtonClick(url,type){
             openSnackbar("复制失败：" + data + "，请手动复制");
             clipboard.destroy();
         });
-    }
-    else {
+    } else if(type === "download") {
         window.open(encodeURI("http://"+url));
+    } else if(type === "play") {
+        window.open(encodeURI("potplayer://http://"+url));
     }
 }
 

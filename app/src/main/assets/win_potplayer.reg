@@ -1,0 +1,10 @@
+Windows Registry Editor Version 5.00
+[HKEY_CLASSES_ROOT\potplayer]
+"URL Protocol"=""
+@="potplayer"
+[HKEY_CLASSES_ROOT\potplayer\DefaultIcon]
+@="D:\\Program Files\\DAUM\\PotPlayer\\PotPlayerMini64.exe,1"
+[HKEY_CLASSES_ROOT\potplayer\shell]
+[HKEY_CLASSES_ROOT\potplayer\shell\open]
+[HKEY_CLASSES_ROOT\potplayer\shell\open\command]
+@="\"D:\\Program Files\\DAUM\\PotPlayer\\PotPlayerMini64.exe\" \"%1\""
