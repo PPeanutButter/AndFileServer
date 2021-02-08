@@ -18,17 +18,18 @@ class MainActivity : PeanutActivity() {
         }
         val panel = findViewById<LinearLayout>(R.id.log)
         panel.removeAllViews()
-        thread {
-            while (true) {
-                try {
-                    for (log in SettingManager.getLogs())
-                        runOnUiThread { log?.let { a-> panel.addView(TextView(this).also { it.text = a }) } }
-                } catch (e: Exception) {
+        if (SettingManager["SHOW_LOGS"] != "false")
+            thread {
+                while (true) {
+                    try {
+                        for (log in SettingManager.getLogs())
+                            runOnUiThread { log?.let { a-> panel.addView(TextView(this).also { it.text = a }) } }
+                    } catch (e: Exception) {
 
+                    }
+                    Thread.sleep(200)
                 }
-                Thread.sleep(200)
             }
-        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

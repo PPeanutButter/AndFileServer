@@ -54,12 +54,16 @@ function getFileDetail(fileName,mime_type){
         $('.file-dialog-name__text').text(fileName);
         $('ul.mdc-list-detail-panel').empty();
         $('div.mdc-dialog__actions').empty();
-        $('div.file-icon').html(String.format(file_detail_icon_html,mime_type));
         //判断是否是视频文件
         let isVideo;
-        if (mime_type.toLowerCase().startsWith("video/"))
+        if (mime_type.toLowerCase().startsWith("video/")){
             isVideo = ""
-        else isVideo = "disabled"
+            $('div.file-icon').html(String.format(file_detail_icon_video_html,"/getVideoPreview?path="+root+fileName));
+        }
+        else {
+            isVideo = "disabled"
+            $('div.file-icon').html(String.format(file_detail_icon_html,"/getAssets?res=mime-type-icon/"+mime_type));
+        }
         //详情
         for (const list of eval(data)) {
             $('ul.mdc-list-detail-panel').append(String.format(file_detail_html,list.key,list.value))

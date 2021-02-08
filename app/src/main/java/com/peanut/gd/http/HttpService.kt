@@ -5,6 +5,8 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
 import android.os.Build
 import android.os.Environment
 import android.os.IBinder
@@ -13,8 +15,7 @@ import androidx.core.app.NotificationCompat
 import fi.iki.elonen.NanoHTTPD
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
-import java.io.FileInputStream
+import java.io.*
 import java.net.NetworkInterface
 import java.net.SocketException
 import java.net.URLEncoder
@@ -22,6 +23,7 @@ import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.max
+
 
 class HttpService : Service() {
     @Suppress("DEPRECATION")
@@ -54,10 +56,12 @@ class HttpService : Service() {
     inner class HttpServer(HttpPort: Int, private val context: Context) : NanoHTTPD(HttpPort) {
         init {
             start(SOCKET_READ_TIMEOUT, false)
-            SettingManager.addLogs("Running! Point your browsers to "+"http://" + getAllLocalIpAddress().joinToString(
-                prefix = "{",
-                postfix = "}"
-            ) + ":8081")
+            SettingManager.addLogs(
+                "Running! Point your browsers to " + "http://" + getAllLocalIpAddress().joinToString(
+                    prefix = "{",
+                    postfix = "}"
+                ) + ":8081"
+            )
         }
 
         /**
@@ -69,6 +73,7 @@ class HttpService : Service() {
          *      http://localhost:8081/getAssets?res=style.css --获取html模板资源
          *      http://localhost:8081/getFileDetail?path=style.css --获取文件信息[{mime_type,size,last_edit_time}]
          *      http://localhost:8081/getFile?path= --下载文件
+         *      http://localhost:8081/getVideoPreview?path= --下载视频文件缩略图
          *      http://localhost:8081/settings?key=&value= --下载文件
          *      http://localhost:8081/else --获取index.html
          */
@@ -81,6 +86,7 @@ class HttpService : Service() {
                     "/getFileDetail" -> getFileDetail(session.parameters)
                     "/getFile" -> getFile(session.parameters, session.headers)
                     "/settings" -> settings(session.parameters)
+                    "/getVideoPreview" -> getVideoPreview(session.parameters["path"]!![0]!!)
                     "/getAssets" -> {
                         session.parameters["res"]?.get(0)?.sendAssets() ?: newFixedLengthResponse(
                             Response.Status.NOT_FOUND,
@@ -93,6 +99,19 @@ class HttpService : Service() {
                 e.printStackTrace()
                 newFixedLengthResponse(e.message)
             }
+        }
+
+        private fun getVideoPreview(path:String): Response {
+            val bitmap = MediaMetadataRetriever().also { it.setDataSource(rootPath + path) }.frameAtTime
+            val baos = ByteArrayOutputStream()
+            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, baos)
+            val outArray = baos.toByteArray()
+            return newFixedLengthResponse(
+                Response.Status.OK,
+                "application/octet-stream",
+                ByteArrayInputStream(outArray),
+                outArray.size.toLong()
+            )
         }
 
         private fun String.sendAssets(): Response {

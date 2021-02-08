@@ -65,7 +65,13 @@ const file_detail_icon_html = "<div class=\"V1mwke\">\n" +
                               "        <div class=\"l-u-Ab-zb l-u-Ab-ul\">\n" +
                               "            <div class=\"l-u-Ab-zb-Pn-ve\"></div>\n" +
                               "            <div class=\"l-u-Ab-zb-Lu\"></div>\n" +
-                              "            <img class=\"l-u-Ab-zb-c\" src=\"/getAssets?res=mime-type-icon/{0}\"></div>\n" +
+                              "            <img class=\"l-u-Ab-zb-c\" src=\"{0}\"></div>\n" +
+                              "    </div>\n" +
+                              "</div>";
+const file_detail_icon_video_html = "<div class=\"V1mwke\">\n" +
+                              "    <div class=\"l-u-Ab-zb-x l-ta-wa\">\n" +
+                              "        <div class=\"l-u-Ab-zb l-u-Ab-ul\">\n" +
+                              "            <img class=\"l-u-Ab-zb-c\" src=\"{0}\" style=\"width: inherit;height: inherit;\"></div>\n" +
                               "    </div>\n" +
                               "</div>";
 const file_detail_html = "<li class=\"mdc-list-item\">\n" +
